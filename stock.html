@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catalogue - MyStock LEE</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <nav>
+        <div class="logo">📦 MyStock LEE</div>
+        <ul>
+            <li><a href="index.html">Accueil</a></li>
+            <li><a href="stock.html" class="active">Mon Stock</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <h1>Catalogue & Disponibilités</h1>
+        
+        <div class="filters">
+            <input type="text" id="searchBox" onkeyup="renderGelatines()" placeholder="🔍 Rechercher (ex: 204, Blue)...">
+            <button class="filter-btn" id="btn-all" onclick="setFilter('all')">Tout voir</button>
+            <button class="filter-btn" id="btn-stock" onclick="setFilter('stock')">En Stock Uniquement</button>
+        </div>
+
+        <div id="count-display" style="margin-bottom: 10px; color: #7f8c8d; font-weight: bold;"></div>
+        
+        <div class="gel-grid" id="gel-list"></div>
+    </div>
+
+    <script>
+        // --- 1. TON STOCK (Mets tes numéros ici) ---
+        const monStockReel = [
+            "7", "8", "9", "17", "19", "21", "22", "26", "27", "35",
+            "46", "48", "53", "63", "75", "79", "85",
+            "100", "101", "102", "103", "104", "105", "106", "107", "108", "109",
+            "110", "111", "113", "115", "116", "117", "119", "120", "121", "122",
+            "124", "126", "127", "128", "132", "134", "135", "136", "137", "139",
+            "140", "141", "143", "147", "148", "151", "152", "153", "154", "156",
+            "157", "158", "161", "162", "164", "165", "166", "170", "174", "176",
+            "179", "180", "181", "183", "192", "193", "195", "197",
+            "200", "201", "202", "203", "204", "205", "206", "207", "219", "236",
+            "248", "249", "251", "281", "343",
+            "501", "502", "503", "603",
+            "704", "707", "708", "709", "711", "715", "716", "723", "729", "765", "776", "777"
+        ];
+
+        // --- 2. BASE DE DONNÉES COMPLÈTE LEE ---
+        const database = [
+            { ref: "002", nom: "Rose Pink", hex: "#FF9999" }, { ref: "003", nom: "Lavender Tint", hex: "#E6E6FA" },
+            { ref: "004", nom: "Med Bastard Amber", hex: "#FFCC99" }, { ref: "007", nom: "Pale Yellow", hex: "#FFFDD0" },
+            { ref: "008", nom: "Dark Salmon", hex: "#FF8C69" }, { ref: "009", nom: "Pale Amber Gold", hex: "#FFCC99" },
+            { ref: "010", nom: "Medium Yellow", hex: "#FFD700" }, { ref: "013", nom: "Straw Tint", hex: "#F5F5DC" },
+            { ref: "017", nom: "Surprise Peach", hex: "#FFDAB9" }, { ref: "019", nom: "Fire", hex: "#FF4500" },
+            { ref: "020", nom: "Medium Amber", hex: "#FFBF00" }, { ref: "021", nom: "Gold Amber", hex: "#FFBF00" },
+            { ref: "022", nom: "Dark Amber", hex: "#FF8C00" }, { ref: "024", nom: "Scarlet", hex: "#FF2400" },
+            { ref: "026", nom: "Bright Red", hex: "#FF0000" }, { ref: "027", nom: "Medium Red", hex: "#DC143C" },
+            { ref: "029", nom: "Plasa Red", hex: "#B22222" }, { ref: "035", nom: "Light Pink", hex: "#FFB6C1" },
+            { ref: "036", nom: "Medium Pink", hex: "#FF69B4" }, { ref: "046", nom: "Dark Magenta", hex: "#8B008B" },
+            { ref: "048", nom: "Rose Purple", hex: "#9932CC" }, { ref: "049", nom: "Medium Purple", hex: "#BA55D3" },
+            { ref: "052", nom: "Light Lavender", hex: "#E6E6FA" }, { ref: "053", nom: "Paler Lavender", hex: "#E6E6FA" },
+            { ref: "058", nom: "Lavender", hex: "#B57EDC" }, { ref: "061", nom: "Mist Blue", hex: "#ADD8E6" },
+            { ref: "063", nom: "Pale Blue", hex: "#AFEEEE" }, { ref: "068", nom: "Sky Blue", hex: "#87CEEB" },
+            { ref: "071", nom: "Tokyo Blue", hex: "#000080" }, { ref: "075", nom: "Evening Blue", hex: "#4169E1" },
+            { ref: "079", nom: "Just Blue", hex: "#1E90FF" }, { ref: "085", nom: "Deeper Blue", hex: "#0000CD" },
+            { ref: "088", nom: "Lime Green", hex: "#32CD32" }, { ref: "089", nom: "Moss Green", hex: "#ADFF2F" },
+            { ref: "090", nom: "Dark Yellow Green", hex: "#9ACD32" }, { ref: "100", nom: "Spring Yellow", hex: "#FFFF66" },
+            { ref: "101", nom: "Yellow", hex: "#FFFF00" }, { ref: "102", nom: "Light Amber", hex: "#FFD700" },
+            { ref: "103", nom: "Straw", hex: "#F0E68C" }, { ref: "104", nom: "Deep Amber", hex: "#FFA500" },
+            { ref: "105", nom: "Orange", hex: "#FF8000" }, { ref: "106", nom: "Primary Red", hex: "#FF0000" },
+            { ref: "107", nom: "Light Rose", hex: "#FF99CC" }, { ref: "108", nom: "English Rose", hex: "#FF6699" },
+            { ref: "109", nom: "Light Salmon", hex: "#FF9999" }, { ref: "110", nom: "Middle Rose", hex: "#FF66CC" },
+            { ref: "111", nom: "Dark Pink", hex: "#FF3399" }, { ref: "113", nom: "Magenta", hex: "#FF00FF" },
+            { ref: "115", nom: "Peacock Blue", hex: "#00CCCC" }, { ref: "116", nom: "Medium Blue-Green", hex: "#009999" },
+            { ref: "117", nom: "Steel Blue", hex: "#6699CC" }, { ref: "118", nom: "Light Blue", hex: "#ADD8E6" },
+            { ref: "119", nom: "Dark Blue", hex: "#00008B" }, { ref: "120", nom: "Deep Blue", hex: "#0000CC" },
+            { ref: "121", nom: "Lee Green", hex: "#00FF00" }, { ref: "122", nom: "Fern Green", hex: "#33CC33" },
+            { ref: "124", nom: "Dark Green", hex: "#006400" }, { ref: "126", nom: "Mauve", hex: "#CC99CC" },
+            { ref: "127", nom: "Smokey Pink", hex: "#FF9999" }, { ref: "128", nom: "Bright Pink", hex: "#FF00CC" },
+            { ref: "129", nom: "Heavy Frost", hex: "#F0F0F0" }, { ref: "130", nom: "Clear", hex: "#FFFFFF" },
+            { ref: "131", nom: "Marine Blue", hex: "#005F6A" }, { ref: "132", nom: "Medium Blue", hex: "#0066CC" },
+            { ref: "134", nom: "Golden Amber", hex: "#FFCC33" }, { ref: "135", nom: "Deep Golden Amber", hex: "#FF9900" },
+            { ref: "136", nom: "Pale Lavender", hex: "#E6E6FA" }, { ref: "137", nom: "Special Lavender", hex: "#CC99FF" },
+            { ref: "138", nom: "Pale Green", hex: "#98FB98" }, { ref: "139", nom: "Primary Green", hex: "#00FF00" },
+            { ref: "140", nom: "Summer Blue", hex: "#66CCFF" }, { ref: "141", nom: "Bright Blue", hex: "#00CCFF" },
+            { ref: "142", nom: "Pale Violet", hex: "#D8BFD8" }, { ref: "143", nom: "Pale Navy Blue", hex: "#333399" },
+            { ref: "144", nom: "No Color Blue", hex: "#B0C4DE" }, { ref: "147", nom: "Apricot", hex: "#FFCC99" },
+            { ref: "148", nom: "Bright Rose", hex: "#FF3366" }, { ref: "151", nom: "Gold Tint", hex: "#FFFACD" },
+            { ref: "152", nom: "Pale Gold", hex: "#FFE4B5" }, { ref: "153", nom: "Pale Salmon", hex: "#FFCCBB" },
+            { ref: "154", nom: "Pale Rose", hex: "#FFCCCC" }, { ref: "156", nom: "Chocolate", hex: "#8B4513" },
+            { ref: "157", nom: "Pink", hex: "#FFC0CB" }, { ref: "158", nom: "Deep Orange", hex: "#FF4500" },
+            { ref: "159", nom: "No Color Straw", hex: "#FAFAD2" }, { ref: "161", nom: "Slate Blue", hex: "#6699CC" },
+            { ref: "162", nom: "Bastard Amber", hex: "#FFCC99" }, { ref: "164", nom: "Flame Red", hex: "#FF3300" },
+            { ref: "165", nom: "Daylight Blue", hex: "#99CCFF" }, { ref: "166", nom: "Pale Red", hex: "#FF9999" },
+            { ref: "169", nom: "Lilac Tint", hex: "#E6E6FA" }, { ref: "170", nom: "Deep Lavender", hex: "#9966CC" },
+            { ref: "172", nom: "Lagoon Blue", hex: "#00CED1" }, { ref: "174", nom: "Dark Steel Blue", hex: "#336699" },
+            { ref: "176", nom: "Loving Amber", hex: "#FFCC66" }, { ref: "179", nom: "Chrome Orange", hex: "#FF6600" },
+            { ref: "180", nom: "Dark Lavender", hex: "#663399" }, { ref: "181", nom: "Congo Blue", hex: "#0000FF" },
+            { ref: "182", nom: "Light Red", hex: "#CD5C5C" }, { ref: "183", nom: "Moonlight Blue", hex: "#3333FF" },
+            { ref: "184", nom: "Cosmetic Peach", hex: "#FFDAB9" }, { ref: "186", nom: "Cosmetic Silver Rose", hex: "#C0C0C0" },
+            { ref: "187", nom: "Cosmetic Rouge", hex: "#CD5C5C" }, { ref: "188", nom: "Cosmetic Highlight", hex: "#FFF0F5" },
+            { ref: "189", nom: "Cosmetic Silver Moss", hex: "#8FBC8F" }, { ref: "190", nom: "Cosmetic Emerald", hex: "#50C878" },
+            { ref: "191", nom: "Cosmetic Aqua Blue", hex: "#00FFFF" }, { ref: "192", nom: "Flesh Pink", hex: "#FFCC99" },
+            { ref: "193", nom: "Rosy Amber", hex: "#CC6633" }, { ref: "194", nom: "Surprise Pink", hex: "#FF1493" },
+            { ref: "195", nom: "Zenith Blue", hex: "#0066FF" }, { ref: "196", nom: "True Blue", hex: "#0000CD" },
+            { ref: "197", nom: "Alice Blue", hex: "#6699FF" }, { ref: "198", nom: "Palace Blue", hex: "#4169E1" },
+            { ref: "199", nom: "Regal Blue", hex: "#00008B" }, { ref: "200", nom: "Double C.T. Blue", hex: "#6699FF" },
+            { ref: "201", nom: "Full C.T. Blue", hex: "#99CCFF" }, { ref: "202", nom: "Half C.T. Blue", hex: "#CCDDFF" },
+            { ref: "203", nom: "Quarter C.T. Blue", hex: "#E6EEFF" }, { ref: "204", nom: "Full C.T. Orange", hex: "#FF9933" },
+            { ref: "205", nom: "Half C.T. Orange", hex: "#FFCC99" }, { ref: "206", nom: "Quarter C.T. Orange", hex: "#FFE6CC" },
+            { ref: "207", nom: "Full C.T.O + .3ND", hex: "#CC6600" }, { ref: "208", nom: "Full C.T.O + .6ND", hex: "#994C00" },
+            { ref: "209", nom: "0.3 ND", hex: "#D3D3D3" }, { ref: "210", nom: "0.6 ND", hex: "#A9A9A9" },
+            { ref: "211", nom: "0.9 ND", hex: "#808080" }, { ref: "212", nom: "L.C.T. Yellow", hex: "#F5DEB3" },
+            { ref: "213", nom: "White Flame Green", hex: "#90EE90" }, { ref: "216", nom: "White Diffusion", hex: "#F0F0F0" },
+            { ref: "217", nom: "Blue Diffusion", hex: "#E6F0FF" }, { ref: "218", nom: "Eighth C.T. Blue", hex: "#F0F8FF" },
+            { ref: "219", nom: "Fluorescent Green", hex: "#99CC33" }, { ref: "223", nom: "Eighth C.T. Orange", hex: "#FFF8E7" },
+            { ref: "228", nom: "Brushed Silk", hex: "#F5F5F5" }, { ref: "230", nom: "Super Correction L.C.T.", hex: "#FFFFE0" },
+            { ref: "232", nom: "Super White Flame Green", hex: "#ADFF2F" }, { ref: "236", nom: "HMI to Tungsten", hex: "#FFCC33" },
+            { ref: "237", nom: "CID to Tungsten", hex: "#F4A460" }, { ref: "238", nom: "CSI to Tungsten", hex: "#D2691E" },
+            { ref: "241", nom: "Fluorescent 5700K", hex: "#ADD8E6" }, { ref: "242", nom: "Fluorescent 4300K", hex: "#E0FFFF" },
+            { ref: "243", nom: "Fluorescent 3600K", hex: "#F0E68C" }, { ref: "244", nom: "Plus Green", hex: "#98FB98" },
+            { ref: "245", nom: "Half Plus Green", hex: "#90EE90" }, { ref: "246", nom: "Quarter Plus Green", hex: "#98FB98" },
+            { ref: "247", nom: "Minus Green", hex: "#FFB6C1" }, { ref: "248", nom: "Half Minus Green", hex: "#FFCCFF" },
+            { ref: "249", nom: "Quarter Minus Green", hex: "#FFE6FF" }, { ref: "250", nom: "Half White Diffusion", hex: "#FAFAFA" },
+            { ref: "251", nom: "Quarter White Diffusion", hex: "#F5F5F5" }, { ref: "253", nom: "Hampshire Frost", hex: "#F8F8F8" },
+            { ref: "255", nom: "Hollywood Frost", hex: "#FCFCFC" }, { ref: "268", nom: "Nun's Knickers", hex: "#FFF0F5" },
+            { ref: "270", nom: "Lee Scrim", hex: "#D3D3D3" }, { ref: "271", nom: "Mirror Silver", hex: "#C0C0C0" },
+            { ref: "272", nom: "Soft Gold Reflector", hex: "#FFD700" }, { ref: "273", nom: "Soft Silver Reflector", hex: "#C0C0C0" },
+            { ref: "274", nom: "Mirror Gold", hex: "#DAA520" }, { ref: "275", nom: "Black Scrim", hex: "#000000" },
+            { ref: "278", nom: "Eighth Plus Green", hex: "#F0FFF0" }, { ref: "279", nom: "Eighth Minus Green", hex: "#FFF0F5" },
+            { ref: "281", nom: "Three Quarter C.T. Blue", hex: "#80B3FF" }, { ref: "285", nom: "Three Quarter C.T. Orange", hex: "#FFB366" },
+            { ref: "322", nom: "Soft Green", hex: "#90EE90" }, { ref: "323", nom: "Jade", hex: "#00A86B" },
+            { ref: "325", nom: "Mallard Green", hex: "#006400" }, { ref: "327", nom: "Forest Green", hex: "#228B22" },
+            { ref: "328", nom: "Follies Pink", hex: "#FF69B4" }, { ref: "341", nom: "Limpit Green", hex: "#98FB98" },
+            { ref: "343", nom: "Special Medium Lavender", hex: "#9966CC" }, { ref: "344", nom: "Violet", hex: "#EE82EE" },
+            { ref: "352", nom: "Glacier Blue", hex: "#E0FFFF" }, { ref: "353", nom: "Lighter Blue", hex: "#ADD8E6" },
+            { ref: "354", nom: "Special Steel Blue", hex: "#4682B4" }, { ref: "363", nom: "Special Medium Blue", hex: "#0000CD" },
+            { ref: "366", nom: "Cornflower", hex: "#6495ED" }, { ref: "400", nom: "Leelux", hex: "#FFFFFF" },
+            { ref: "410", nom: "Opal Frost", hex: "#F0F0F0" }, { ref: "430", nom: "Grid Cloth", hex: "#FFFFFF" },
+            { ref: "432", nom: "Light Grid Cloth", hex: "#F8F8F8" }, { ref: "434", nom: "Quarter Grid Cloth", hex: "#F0F0F0" },
+            { ref: "441", nom: "Full C.T. Straw", hex: "#FFD700" }, { ref: "442", nom: "Half C.T. Straw", hex: "#F0E68C" },
+            { ref: "443", nom: "Quarter C.T. Straw", hex: "#FAFAD2" }, { ref: "444", nom: "Eighth C.T. Straw", hex: "#FFFFE0" },
+            { ref: "450", nom: "Three Eighth White Diffusion", hex: "#F5F5F5" }, { ref: "460", nom: "Quiet Frost", hex: "#F0F0F0" },
+            { ref: "501", nom: "New Colour Blue", hex: "#6699FF" }, { ref: "502", nom: "Half New Colour Blue", hex: "#99CCFF" },
+            { ref: "503", nom: "Quarter New Colour Blue", hex: "#CCDDFF" }, { ref: "504", nom: "Waterfront Green", hex: "#00CED1" },
+            { ref: "505", nom: "Sally Green", hex: "#9ACD32" }, { ref: "506", nom: "Madge", hex: "#FF4500" },
+            { ref: "507", nom: "Madge 2", hex: "#FF6347" }, { ref: "508", nom: "Midnight Maya", hex: "#191970" },
+            { ref: "600", nom: "Arctic White", hex: "#F0F8FF" }, { ref: "601", nom: "Silver", hex: "#C0C0C0" },
+            { ref: "602", nom: "Platinum", hex: "#E5E4E2" }, { ref: "603", nom: "Moonlight White", hex: "#E0E0E0" },
+            { ref: "650", nom: "Industry Sodium", hex: "#FFD700" }, { ref: "651", nom: "HI Sodium", hex: "#FFA500" },
+            { ref: "652", nom: "Urban Sodium", hex: "#FF8C00" }, { ref: "653", nom: "LO Sodium", hex: "#FF4500" },
+            { ref: "700", nom: "Perfect Lavender", hex: "#E6E6FA" }, { ref: "701", nom: "Provence", hex: "#9370DB" },
+            { ref: "702", nom: "Special Pale Lavender", hex: "#E6E6FA" }, { ref: "704", nom: "Lily", hex: "#D8BFD8" },
+            { ref: "705", nom: "Lily Frost", hex: "#D8BFD8" }, { ref: "706", nom: "King Fals Lavender", hex: "#E6E6FA" },
+            { ref: "707", nom: "Ultimate Violet", hex: "#8A2BE2" }, { ref: "708", nom: "Cool Lavender", hex: "#9370DB" },
+            { ref: "709", nom: "Electric Lilac", hex: "#BA55D3" }, { ref: "710", nom: "Spir Special Blue", hex: "#4682B4" },
+            { ref: "711", nom: "Cold Blue", hex: "#4682B4" }, { ref: "712", nom: "Bedford Blue", hex: "#4169E1" },
+            { ref: "713", nom: "Winter Blue", hex: "#87CEEB" }, { ref: "714", nom: "Elysian Blue", hex: "#87CEEB" },
+            { ref: "715", nom: "Cabana Blue", hex: "#00CED1" }, { ref: "716", nom: "Mikkel Blue", hex: "#1E90FF" },
+            { ref: "717", nom: "Shanklin Frost", hex: "#F0F8FF" }, { ref: "718", nom: "Half Shanklin Frost", hex: "#F0F8FF" },
+            { ref: "719", nom: "Colour Wash Blue", hex: "#6495ED" }, { ref: "720", nom: "Durham Daylight Frost", hex: "#F0F8FF" },
+            { ref: "721", nom: "Berry Blue", hex: "#1E90FF" }, { ref: "722", nom: "Bray Blue", hex: "#4682B4" },
+            { ref: "723", nom: "Virgin Blue", hex: "#87CEEB" }, { ref: "724", nom: "Ocean Blue", hex: "#00BFFF" },
+            { ref: "725", nom: "Old Steel Blue", hex: "#4682B4" }, { ref: "728", nom: "Steel Green", hex: "#5F9EA0" },
+            { ref: "729", nom: "Scuba Blue", hex: "#00BFFF" }, { ref: "730", nom: "Liberty Green", hex: "#3CB371" },
+            { ref: "731", nom: "Dirty Ice", hex: "#AFEEEE" }, { ref: "733", nom: "Damp Squib", hex: "#7FFFD4" },
+            { ref: "735", nom: "Velvet Green", hex: "#228B22" }, { ref: "736", nom: "Twickenham Green", hex: "#32CD32" },
+            { ref: "738", nom: "Jas Green", hex: "#90EE90" }, { ref: "742", nom: "Bramble Green", hex: "#556B2F" },
+            { ref: "744", nom: "Dirty White", hex: "#F5F5DC" }, { ref: "746", nom: "Brown", hex: "#A52A2A" },
+            { ref: "747", nom: "Easy White", hex: "#F8F8FF" }, { ref: "748", nom: "Seedy Pink", hex: "#FFC0CB" },
+            { ref: "749", nom: "Hampshire Rose", hex: "#FF69B4" }, { ref: "750", nom: "Durham Frost", hex: "#FFFFFF" },
+            { ref: "763", nom: "Wheat", hex: "#F5DEB3" }, { ref: "764", nom: "Sun Colour Straw", hex: "#FFFACD" },
+            { ref: "765", nom: "Lee Yellow", hex: "#FFFF33" }, { ref: "767", nom: "Oklahoma Yellow", hex: "#FFD700" },
+            { ref: "768", nom: "Egg Yolk Yellow", hex: "#FFCC00" }, { ref: "770", nom: "Burnt Yellow", hex: "#FFA500" },
+            { ref: "773", nom: "Cardbox Amber", hex: "#FF8C00" }, { ref: "776", nom: "Nectarine", hex: "#FF8C00" },
+            { ref: "777", nom: "Rust", hex: "#B7410E" }, { ref: "778", nom: "Millennium Gold", hex: "#D4AF37" },
+            { ref: "779", nom: "Bastard Pink", hex: "#FFB6C1" }, { ref: "780", nom: "AS Golden Amber", hex: "#FFCC33" },
+            { ref: "781", nom: "Terry Red", hex: "#FF0000" }, { ref: "787", nom: "Marius Red", hex: "#FF4500" },
+            { ref: "789", nom: "Blood Red", hex: "#8B0000" }, { ref: "790", nom: "Moroccan Pink", hex: "#FF1493" },
+            { ref: "791", nom: "Moroccan Frost", hex: "#FFC0CB" }, { ref: "793", nom: "Vanity Fair", hex: "#FF00FF" },
+            { ref: "794", nom: "Magdalen Red", hex: "#DC143C" }, { ref: "795", nom: "Magical Magenta", hex: "#8B008B" },
+            { ref: "797", nom: "Deep Purple", hex: "#4B0082" }, { ref: "798", nom: "Chrysalis Pink", hex: "#FF69B4" }
+        ];
+
+        // --- 3. FONCTIONS ---
+        let currentFilter = 'all';
+
+        function renderGelatines() {
+            const container = document.getElementById('gel-list');
+            const searchInput = document.getElementById('searchBox').value.toLowerCase();
+            const countDisplay = document.getElementById('count-display');
+            
+            container.innerHTML = '';
+            let count = 0;
+
+            database.forEach(gel => {
+                // Stock Check (On accepte "7" et "007")
+                let enStock = false;
+                if (monStockReel.includes(gel.ref)) enStock = true;
+                if (monStockReel.includes(parseInt(gel.ref).toString())) enStock = true;
+
+                // Filtres
+                if (currentFilter === 'stock' && !enStock) return;
+                
+                const matchRef = gel.ref.includes(searchInput);
+                const matchName = gel.nom.toLowerCase().includes(searchInput);
+                if (searchInput !== "" && !matchRef && !matchName) return;
+
+                // Affichage
+                count++;
+                const stockText = enStock ? "EN STOCK" : "MANQUANT";
+                const stockClass = enStock ? "in-stock" : "out-of-stock";
+                const borderClass = enStock ? "has-stock" : "";
+                const opacityStyle = enStock ? "opacity:1;" : "opacity:0.6; filter:grayscale(0.8);";
+
+                const cardHTML = `
+                    <div class="gel-card ${borderClass}" style="${opacityStyle}">
+                        <div class="color-swatch" style="background-color: ${gel.hex};"></div>
+                        <div class="gel-ref">${gel.ref}</div>
+                        <div class="gel-name">${gel.nom}</div>
+                        <div class="stock-status ${stockClass}">${stockText}</div>
+                    </div>
+                `;
+                container.innerHTML += cardHTML;
+            });
+
+            countDisplay.innerText = `${count} gélatine(s) trouvée(s)`;
+        }
+
+        function setFilter(mode) {
+            currentFilter = mode;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            if(mode === 'all') document.getElementById('btn-all').classList.add('active');
+            if(mode === 'stock') document.getElementById('btn-stock').classList.add('active');
+            renderGelatines();
+        }
+
+        // Démarrage
+        renderGelatines();
+    </script>
+
+</body>
+</html>
